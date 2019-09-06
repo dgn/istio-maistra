@@ -202,10 +202,10 @@ func (mlw *multiListerWatcher) newMultiWatch(resourceVersions map[string]string,
 	defer mlw.lock.Unlock()
 
 	var (
-		result  = make(chan watch.Event)
-		stopped = make(chan struct{})
-		wg      sync.WaitGroup
-		combinedResult  = make(chan *combinedEvent)
+		result         = make(chan watch.Event)
+		stopped        = make(chan struct{})
+		wg             sync.WaitGroup
+		combinedResult = make(chan *combinedEvent)
 	)
 	mlw.result = result
 	mlw.stopped = stopped
@@ -219,7 +219,7 @@ func (mlw *multiListerWatcher) newMultiWatch(resourceVersions map[string]string,
 	}
 
 	mlw.state = watching
-	wg.Add(len(mlw.lwMap)+1)
+	wg.Add(len(mlw.lwMap) + 1)
 
 	go func() {
 		defer wg.Done()
@@ -227,7 +227,7 @@ func (mlw *multiListerWatcher) newMultiWatch(resourceVersions map[string]string,
 		for {
 			var event *combinedEvent
 			select {
-			case event = <- combinedResult:
+			case event = <-combinedResult:
 			case <-stopped:
 				return
 			}
@@ -271,9 +271,9 @@ func (mlw *multiListerWatcher) newMultiWatch(resourceVersions map[string]string,
 			for {
 				event, ok := <-w.ResultChan()
 				if !ok {
-					mlw.lock.Lock()
-					defer mlw.lock.Unlock()
-					mlw.reportError("Underlying Result Channel closed")
+					// underlying watch was closed, so we clean up and propagate
+					// up to the reflector
+					mlw.Stop()
 					return
 				}
 
