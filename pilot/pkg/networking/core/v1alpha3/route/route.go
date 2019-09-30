@@ -26,6 +26,7 @@ import (
 	xdsfault "github.com/envoyproxy/go-control-plane/envoy/config/filter/fault/v2"
 	xdshttpfault "github.com/envoyproxy/go-control-plane/envoy/config/filter/http/fault/v2"
 	xdstype "github.com/envoyproxy/go-control-plane/envoy/type"
+	matcher "github.com/envoyproxy/go-control-plane/envoy/type/matcher"
 	xdsutil "github.com/envoyproxy/go-control-plane/pkg/wellknown"
 	"github.com/golang/protobuf/ptypes"
 	"github.com/golang/protobuf/ptypes/any"
@@ -39,6 +40,7 @@ import (
 	networking "istio.io/api/networking/v1alpha3"
 	"istio.io/pkg/log"
 
+	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/networking/core/v1alpha3/route/retry"
 	"istio.io/istio/pilot/pkg/networking/util"
@@ -588,7 +590,11 @@ func translateRouteMatch(in *networking.HTTPMatchRequest) *route.RouteMatch {
 		case *networking.StringMatch_Prefix:
 			out.PathSpecifier = &route.RouteMatch_Prefix{Prefix: m.Prefix}
 		case *networking.StringMatch_Regex:
-			out.PathSpecifier = &route.RouteMatch_Regex{Regex: m.Regex}
+			if features.EnableUnsafeRegex.Get() {
+				out.PathSpecifier = &route.RouteMatch_Regex{Regex: m.Regex}
+			} else {
+				out.PathSpecifier = &route.RouteMatch_SafeRegex{SafeRegex: &matcher.RegexMatcher{Regex: m.Regex}}
+			}
 		}
 	}
 
@@ -648,7 +654,11 @@ func translateHeaderMatch(name string, in *networking.StringMatch) route.HeaderM
 		// Golang has a slightly different regex grammar
 		out.HeaderMatchSpecifier = &route.HeaderMatcher_PrefixMatch{PrefixMatch: m.Prefix}
 	case *networking.StringMatch_Regex:
-		out.HeaderMatchSpecifier = &route.HeaderMatcher_RegexMatch{RegexMatch: m.Regex}
+		if features.EnableUnsafeRegex.Get() {
+			out.HeaderMatchSpecifier = &route.HeaderMatcher_RegexMatch{RegexMatch: m.Regex}
+		} else {
+			out.HeaderMatchSpecifier = &route.HeaderMatcher_SafeRegexMatch{SafeRegexMatch: &matcher.RegexMatcher{Regex: m.Regex}}
+		}
 	}
 
 	return out
@@ -696,9 +706,11 @@ func getRouteOperation(in *route.Route, vsName string, port int) string {
 		case *route.RouteMatch_Path:
 			path = m.GetPath()
 		case *route.RouteMatch_Regex:
-			// Migration tracked in https://github.com/istio/istio/issues/17127
 			//nolint: staticcheck
 			path = m.GetRegex()
+		case *route.RouteMatch_SafeRegex:
+			//nolint: staticcheck
+			path = m.GetSafeRegex().GetRegex()
 		}
 	}
 
@@ -956,8 +968,8 @@ func getEnvoyRouteTypeAndVal(r *route.Route) (envoyRouteType, string) {
 	case *route.RouteMatch_Prefix:
 		iVal = iR.Prefix
 		iType = envoyPrefix
-	case *route.RouteMatch_Regex:
-		iVal = iR.Regex
+	case *route.RouteMatch_SafeRegex:
+		iVal = iR.SafeRegex.Regex
 		iType = envoyRegex
 	}
 

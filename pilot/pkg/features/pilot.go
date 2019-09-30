@@ -218,6 +218,14 @@ var (
 			"outbound listener for each pod in a headless service. This feature should be disabled "+
 			"if headless services have a large number of pods. ",
 	)
+
+	EnableUnsafeRegex = env.RegisterBoolVar(
+		"PILOT_ENABLE_UNSAFE_REGEX",
+		false,
+		"If enabled, pilot will generate Envoy configuration that does not use safe_regex "+
+			"but the older, deprecated regex field. This should only be enabled to support "+
+			"legacy deployments that have not yet been migrated to the new safe regular expressions.",
+	)
 )
 
 var (
