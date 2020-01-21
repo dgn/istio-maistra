@@ -49,15 +49,12 @@ const (
 	IngressComponentName ComponentName = "IngressGateways"
 	EgressComponentName  ComponentName = "EgressGateways"
 
-	// Addon root component
-	AddonComponentName ComponentName = "AddonComponents"
-
-	// Legacy addon components
+	// Addon components
 	PrometheusComponentName ComponentName = "Prometheus"
 	KialiComponentName      ComponentName = "Kiali"
 	GrafanaComponentName    ComponentName = "Grafana"
 	TracingComponentName    ComponentName = "Tracing"
-	CoreDNSComponentName    ComponentName = "Istiocoredns"
+	CoreDNSComponentName    ComponentName = "CoreDNS"
 
 	// Operator components
 	IstioOperatorComponentName      ComponentName = "IstioOperator"
@@ -131,11 +128,6 @@ func (cn ComponentName) IsGateway() bool {
 	return cn == IngressComponentName || cn == EgressComponentName
 }
 
-// IsAddon reports whether cn is an addon component.
-func (cn ComponentName) IsAddon() bool {
-	return cn == AddonComponentName
-}
-
 // IsLegacyAddonComponent reports whether cn is an legacy addonComponent name.
 func (cn ComponentName) IsLegacyAddonComponent() bool {
 	return LegacyAddonComponentNamesMap[cn]
@@ -181,7 +173,12 @@ func Namespace(componentName ComponentName, controlPlaneSpec *v1alpha1.IstioOper
 		return "", fmt.Errorf("defaultNamespace must be set")
 	}
 
-	componentNodeI, found, err := tpath.GetFromStructPath(controlPlaneSpec, "Components."+string(componentName)+".Namespace")
+	componentPath := "Components." + string(componentName) + ".Namespace"
+	if componentName != IngressGatewayComponentName && componentName != EgressComponentName && !componentName.IsCoreComponent() {
+		componentPath = "AddonComponents." + util.ToYAMLPathString(string(componentName)) + ".Namespace"
+	}
+
+	componentNodeI, found, err := tpath.GetFromStructPath(controlPlaneSpec, componentPath)
 	if err != nil {
 		return "", fmt.Errorf("error in Namepsace GetFromStructPath componentNamespace for component=%s: %s", componentName, err)
 	}

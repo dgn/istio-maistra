@@ -448,10 +448,18 @@ func getFromStructPath(node interface{}, path util.Path) (interface{}, bool, err
 		}
 		return getFromStructPath(val.Index(idx).Interface(), path[1:])
 	case reflect.Ptr:
-		structElems = reflect.ValueOf(node).Elem()
+		structElems = val.Elem()
 		if !util.IsStruct(structElems) {
 			return nil, false, fmt.Errorf("getFromStructPath path %s, expected struct ptr, got %T", path, node)
 		}
+	case reflect.Map:
+		key := reflect.ValueOf(path[0])
+		fmt.Println("Key:" + key.String())
+		entry := val.MapIndex(key)
+		if !entry.IsValid() {
+			return nil, false, nil
+		}
+		return getFromStructPath(entry.Interface(), path[1:])
 	default:
 		return nil, false, fmt.Errorf("getFromStructPath path %s, unsupported type %T", path, node)
 	}
