@@ -593,6 +593,9 @@ The test framework supports the following command-line flags:
   -istio.test.kube.helm.valuesFile string
         Helm values file. This can be an absolute path or relative to chartDir. Only valid when deploying Istio. (default "test-values/values-e2e.yaml")
 
+  -istio.test.kube.helm.iopFile string
+        IstioOperator spec file. This can be an absolute path or relative to test's workDir. Defaults to "iop-integration-test-defaults.yaml", which resides in tests/integration/ and is symlinked into workDir.
+
   -istio.test.kube.minikube
         Indicates that the target environment is Minikube. Used by Ingress component to obtain the right IP address. This also pertains to any environment that doesn't support a LoadBalancer type.
 ```

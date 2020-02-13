@@ -23,6 +23,7 @@ import (
 	"strings"
 	"sync"
 
+	"istio.io/istio/pkg/test/env"
 	"istio.io/istio/pkg/test/framework/components/environment/api"
 	"istio.io/istio/pkg/test/framework/core"
 	"istio.io/istio/pkg/test/framework/label"
@@ -66,6 +67,15 @@ func newSuiteContext(s *core.Settings, envFn api.FactoryFn, labels label.Set) (*
 		workDir:      workDir,
 		suiteLabels:  labels,
 		contextNames: make(map[string]struct{}),
+	}
+
+	// create a symbolic link to iop-integration-test-defaults.yaml, for easy access
+	defaultsSymlink := path.Join(workDir, "iop-integration-test-defaults.yaml")
+	if _, err := os.Stat(defaultsSymlink); os.IsNotExist(err) {
+		err = os.Symlink(path.Join(env.IstioSrc, "tests/integration/iop-integration-test-defaults.yaml"), defaultsSymlink)
+		if err != nil {
+			scopes.CI.Warnf("Could not create symlink to iop-integration-test-defaults.yaml file at %s", defaultsSymlink)
+		}
 	}
 
 	env, err := envFn(s.Environment, c)
@@ -160,4 +170,9 @@ func (s *suiteContext) CreateTmpDirectory(prefix string) (string, error) {
 	}
 
 	return dir, err
+}
+
+// WorkDir creates a new subdirectory within this context.
+func (s *suiteContext) WorkDir() string {
+	return s.workDir
 }

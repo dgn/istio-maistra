@@ -44,9 +44,6 @@ type TestContext interface {
 	// If this TestContext was not created by a Test or if that Test is not running, this method will panic.
 	NewSubTest(name string) *Test
 
-	// WorkDir allocated for this test.
-	WorkDir() string
-
 	// CreateDirectoryOrFail creates a new sub directory with the given name in the workdir, or fails the test.
 	CreateDirectoryOrFail(name string) string
 

@@ -35,4 +35,7 @@ type Context interface {
 
 	// CreateTmpDirectory creates a new temporary directory within this context.
 	CreateTmpDirectory(prefix string) (string, error)
+
+	// WorkDir allocated for this context.
+	WorkDir() string
 }

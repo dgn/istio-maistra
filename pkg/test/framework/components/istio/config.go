@@ -43,6 +43,9 @@ const (
 	// In general, specific settings should be added to tests, not here
 	E2EValuesFile = "test-values/values-integ.yaml"
 
+	// IntegrationTestDefaultsIOP
+	IntegrationTestDefaultsIOP = "iop-integration-test-defaults.yaml"
+
 	// DefaultDeployTimeout for Istio
 	DefaultDeployTimeout = time.Second * 300
 
@@ -72,6 +75,7 @@ var (
 		UndeployTimeout:                0,
 		ChartDir:                       env.IstioChartDir,
 		ValuesFile:                     E2EValuesFile,
+		IOPFile:                        IntegrationTestDefaultsIOP,
 		CustomSidecarInjectorNamespace: "",
 	}
 )
@@ -110,6 +114,9 @@ type Config struct {
 
 	// The Helm values file to be used.
 	ValuesFile string
+
+	// The IstioOperator spec file to be used for defaults
+	IOPFile string
 
 	// Override values specifically for the ICP crd
 	// This is mostly required for cases where --set cannot be used
@@ -334,6 +341,7 @@ func (c *Config) String() string {
 	result += fmt.Sprintf("Values:                         %v\n", c.Values)
 	result += fmt.Sprintf("ChartDir:                       %s\n", c.ChartDir)
 	result += fmt.Sprintf("ValuesFile:                     %s\n", c.ValuesFile)
+	result += fmt.Sprintf("IOPFile:                        %s\n", c.IOPFile)
 	result += fmt.Sprintf("SkipWaitForValidationWebhook:   %v\n", c.SkipWaitForValidationWebhook)
 	result += fmt.Sprintf("CustomSidecarInjectorNamespace: %s\n", c.CustomSidecarInjectorNamespace)
 
