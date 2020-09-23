@@ -58,6 +58,7 @@ require (
 	github.com/kr/pretty v0.2.1
 	github.com/kylelemons/godebug v1.1.0
 	github.com/lestrrat-go/jwx v1.0.5
+	github.com/maistra/xns-informer v0.0.0-20201215101027-1cee9c583a48
 	github.com/mattn/go-isatty v0.0.12
 	github.com/mholt/archiver/v3 v3.3.2
 	github.com/miekg/dns v1.1.34
@@ -117,3 +118,5 @@ require (
 	sigs.k8s.io/service-apis v0.1.0-rc2.0.20201112213625-c0375b7fa81f
 	sigs.k8s.io/yaml v1.2.0
 )
+
+replace github.com/maistra/xns-informer => /home/dgrimm/dev/xns-informer
