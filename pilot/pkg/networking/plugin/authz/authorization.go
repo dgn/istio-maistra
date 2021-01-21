@@ -76,7 +76,7 @@ func buildFilter(in *plugin.InputParams, mutable *networking.MutableObjects, isO
 
 	// TODO: Get trust domain from MeshConfig instead.
 	// https://github.com/istio/istio/issues/17873
-	tdBundle := trustdomain.NewBundle(spiffe.GetTrustDomain(), in.Push.Mesh.TrustDomainAliases)
+	tdBundle := trustdomain.NewBundle(spiffe.GetTrustDomain(), []string{})
 	namespace := in.Node.ConfigNamespace
 	workload := labels.Collection{in.Node.Metadata.Labels}
 	option := builder.Option{

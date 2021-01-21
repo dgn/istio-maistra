@@ -63,6 +63,7 @@ import (
 	istiokeepalive "istio.io/istio/pkg/keepalive"
 	kubelib "istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/inject"
+	"istio.io/istio/pkg/servicemesh/federation"
 	"istio.io/istio/pkg/spiffe"
 	"istio.io/istio/security/pkg/k8s/chiron"
 	"istio.io/istio/security/pkg/pki/ca"
@@ -131,6 +132,8 @@ type Server struct {
 	httpServer       *http.Server // debug, monitoring and readiness Server.
 	httpsServer      *http.Server // webhooks HTTPS Server.
 	httpsReadyClient *http.Client
+
+	federationServer *federation.FederationServer
 
 	grpcServer       *grpc.Server
 	secureGrpcServer *grpc.Server
@@ -202,6 +205,8 @@ func NewServer(args *PilotArgs) (*Server, error) {
 		monitoringMux:   http.NewServeMux(),
 		readinessProbes: make(map[string]readinessProbe),
 	}
+
+	s.federationServer = federation.NewFederationServer(e, s.clusterID, features.NetworkName)
 
 	if args.ShutdownDuration == 0 {
 		s.shutdownDuration = 10 * time.Second // If not specified set to 10 seconds.
@@ -418,6 +423,12 @@ func (s *Server) Start(stop <-chan struct{}) error {
 			if err := s.httpsServer.ListenAndServeTLS("", ""); err != nil && err != http.ErrServerClosed {
 				log.Warna(err)
 			}
+		}()
+	}
+
+	if s.federationServer != nil {
+		go func() {
+			s.federationServer.Run()
 		}()
 	}
 

@@ -55,6 +55,7 @@ type PilotArgs struct {
 	Namespace          string
 	Revision           string
 	MeshConfigFile     string
+	Network            string
 	NetworksConfigFile string
 	RegistryOptions    RegistryOptions
 	CtrlZOptions       *ctrlz.Options

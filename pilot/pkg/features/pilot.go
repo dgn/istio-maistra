@@ -297,6 +297,9 @@ var (
 	ClusterName = env.RegisterStringVar("CLUSTER_ID", "Kubernetes",
 		"Defines the cluster and service registry that this Istiod instance is belongs to").Get()
 
+	NetworkName = env.RegisterStringVar("NETWORK_NAME", "Kubernetes",
+		"Defines the network that this Istiod instance belongs to").Get()
+
 	EnableIncrementalMCP = env.RegisterBoolVar(
 		"PILOT_ENABLE_INCREMENTAL_MCP",
 		false,
@@ -389,4 +392,6 @@ var (
 	PilotEnableLoopBlockers = env.RegisterBoolVar("PILOT_ENABLE_LOOP_BLOCKER", true,
 		"If enabled, Envoy will be configured to prevent traffic directly the the inbound/outbound "+
 			"ports (15001/15006). This prevents traffic loops. This option will be removed, and considered always enabled, in 1.9.").Get()
+
+	FederationDiscoveryEndpoint = env.RegisterStringVar("PILOT_REMOTE_FEDERATION_DISCOVERY", "", "").Get()
 )
