@@ -71,12 +71,12 @@ func NewMockCAClient(errors uint64, certLifetime time.Duration) (*CAClient, erro
 
 // CSRSign returns the certificate or errors depending on the settings.
 func (c *CAClient) CSRSign(ctx context.Context, reqID string, csrPEM []byte, exchangedToken string,
-	certValidTTLInSec int64) ([]string /*PEM-encoded certificate chain*/, error) {
+	certValidTTLInSec int64) ([]string /*PEM-encoded certificate chain*/, map[string]string, error) {
 	c.errorCountMutex.Lock()
 	if c.errorCount < c.errors {
 		c.errorCount++
 		c.errorCountMutex.Unlock()
-		return nil, status.Error(codes.Unavailable, "CA is unavailable")
+		return nil, nil, status.Error(codes.Unavailable, "CA is unavailable")
 	}
 	c.errorCountMutex.Unlock()
 
@@ -84,12 +84,12 @@ func (c *CAClient) CSRSign(ctx context.Context, reqID string, csrPEM []byte, exc
 	signingCert, signingKey, certChain, rootCert := c.bundle.GetAll()
 	csr, err := util.ParsePemEncodedCSR(csrPEM)
 	if err != nil {
-		return nil, fmt.Errorf("csr sign error: %v", err)
+		return nil, nil, fmt.Errorf("csr sign error: %v", err)
 	}
 	subjectIDs := []string{"test"}
 	certBytes, err := util.GenCertFromCSR(csr, signingCert, csr.PublicKey, *signingKey, subjectIDs, c.certLifetime, false)
 	if err != nil {
-		return nil, fmt.Errorf("csr sign error: %v", err)
+		return nil, nil, fmt.Errorf("csr sign error: %v", err)
 	}
 
 	block := &pem.Block{
@@ -100,7 +100,7 @@ func (c *CAClient) CSRSign(ctx context.Context, reqID string, csrPEM []byte, exc
 
 	ret := []string{string(cert), string(certChain), string(rootCert)}
 	c.GeneratedCerts = append(c.GeneratedCerts, ret)
-	return ret, nil
+	return ret, nil, nil
 }
 
 // TokenExchangeServer is the mocked token exchange server for testing.

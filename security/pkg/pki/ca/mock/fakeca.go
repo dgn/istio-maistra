@@ -67,3 +67,7 @@ func (ca *FakeCA) GetCAKeyCertBundle() util.KeyCertBundle {
 	}
 	return ca.KeyCertBundle
 }
+
+func (ca *FakeCA) GetTrustBundles() map[string]string {
+	return map[string]string{}
+}

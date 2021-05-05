@@ -158,3 +158,8 @@ func (ra *IstioRA) SignWithCertChain(csrPEM []byte, subjectIDs []string, ttl tim
 func (ra *IstioRA) GetCAKeyCertBundle() util.KeyCertBundle {
 	return ra.keyCertBundle
 }
+
+// TODO: implement
+func (ra *IstioRA) GetTrustBundles() map[string]string {
+	return map[string]string{}
+}

@@ -11,16 +11,33 @@ spec:
   runtime:
     defaults:
       container:
+        imageRegistry: quay.io/maistra
+        imageTag: latest-2.1-qe
         imagePullPolicy: Always
+    components:
+      pilot:
+        container:
+          imageRegistry: registry.gitlab.com/dgrimm/istio
+          imageTag: dgn
+          imageName: pilot
+          imagePullPolicy: Always
   addons:
     grafana:
-      enabled: true
+      enabled: false
     kiali:
-      enabled: true
+      enabled: false
+    prometheus:
+      enabled: false
   tracing:
     type: Jaeger
     sampling: 10000
   proxy:
+    runtime:
+      container:
+        imageRegistry: registry.gitlab.com/dgrimm/istio
+        imageTag: dgn
+        imageName: registry.gitlab.com/dgrimm/istio/proxyv2:dgn
+        imagePullPolicy: Always
     accessLogging:
       file:
         name: /dev/stdout
@@ -83,3 +100,6 @@ spec:
                 cpu: 10m
                 memory: 128Mi
               limits: {}
+  security:
+    trust:
+      domain: mesh1.local
