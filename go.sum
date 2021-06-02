@@ -242,6 +242,10 @@ github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0/go.mod h1:J70FGZSbzsjecRTiTzER+
 github.com/deislabs/oras v0.11.1/go.mod h1:39lCtf8Q6WDC7ul9cnyWXONNzKvabEKk+AX+L0ImnQk=
 github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
+github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc h1:DSZH4/Pox/cq68QXGCSeZSrnGJA/24CxcO0UU3/Gn7E=
+github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
+github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca h1:Zc/lYa3Wf+W7xVxFiGAkggYhJUCFYxbF2ZL2rXw4xLM=
+github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca/go.mod h1:KsMGl4xZwFcYyJv61JALi14yn6xbHQT4CXh06jaEKh8=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dgrijalva/jwt-go v3.2.0+incompatible/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=
 github.com/dnaeon/go-vcr v1.0.1/go.mod h1:aBB1+wY4s93YsC3HHjMBMrwTj2R9FHDzUr9KyGc8n1E=
@@ -1627,10 +1631,6 @@ honnef.co/go/tools v0.0.1-2020.1.3/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9
 honnef.co/go/tools v0.0.1-2020.1.4/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
 honnef.co/go/tools v0.0.1-2020.1.5 h1:nI5egYTGJakVyOryqLs1cQO5dO0ksin5XXs2pspk75k=
 honnef.co/go/tools v0.0.1-2020.1.5/go.mod h1:X/FiERA/W4tHapMX5mGpAtMSVEeEUOyHaw9vFzvIQ3k=
-istio.io/api v0.0.0-20210601145914-9a4239731e79 h1:KdvMsbeCiM4P/tsSBJeitpBvKAGr1TbkE59/y5flybY=
-istio.io/api v0.0.0-20210601145914-9a4239731e79/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
-istio.io/client-go v0.0.0-20210601151459-89ee09f12704 h1:fLvs+1qx+m35yGGg1rqMjyU0Rx/EQHtaeq7EZkmW30s=
-istio.io/client-go v0.0.0-20210601151459-89ee09f12704/go.mod h1:PoQVxzMk+Kvigdq11sstK7Vp0txTGX7ZXU534tCEAqc=
 istio.io/gogo-genproto v0.0.0-20210113155706-4daf5697332f/go.mod h1:6BwTZRNbWS570wHX/uR1Wqk5e0157TofTAUMzT7N4+s=
 istio.io/gogo-genproto v0.0.0-20210528151221-bb0f9b7849f3 h1:wAaRegj1lsyPXqmat6lG1aWbTgPXvZdN+2LeZuXj154=
 istio.io/gogo-genproto v0.0.0-20210528151221-bb0f9b7849f3/go.mod h1:6BwTZRNbWS570wHX/uR1Wqk5e0157TofTAUMzT7N4+s=

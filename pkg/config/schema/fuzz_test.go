@@ -33,6 +33,7 @@ import (
 	networking "istio.io/api/networking/v1alpha3"
 	security "istio.io/api/security/v1beta1"
 	telemetry "istio.io/api/telemetry/v1alpha1"
+	clientextensions "istio.io/client-go/pkg/apis/extensions/v1alpha1"
 	clientnetworkingalpha "istio.io/client-go/pkg/apis/networking/v1alpha3"
 	clientnetworkingbeta "istio.io/client-go/pkg/apis/networking/v1beta1"
 	clientsecurity "istio.io/client-go/pkg/apis/security/v1beta1"
@@ -95,6 +96,7 @@ func init() {
 	clientnetworkingbeta.AddToScheme(scheme)
 	clientsecurity.AddToScheme(scheme)
 	clienttelemetry.AddToScheme(scheme)
+	clientextensions.AddToScheme(scheme)
 }
 
 func createFuzzer() *fuzz.Fuzzer {

@@ -108,3 +108,9 @@ require (
 	sigs.k8s.io/mcs-api v0.1.0
 	sigs.k8s.io/yaml v1.2.0
 )
+
+// FIXME: this is just here until https://github.com/istio/api/pull/1940 gets merged
+replace (
+	istio.io/api => github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc
+	istio.io/client-go => github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca
+)
