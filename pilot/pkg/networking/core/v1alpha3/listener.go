@@ -109,6 +109,7 @@ func (configgen *ConfigGeneratorImpl) BuildListeners(node *model.Proxy,
 		builder = configgen.buildGatewayListeners(builder)
 	}
 
+	builder.addExtensions()
 	builder.patchListeners()
 	return builder.getListeners()
 }

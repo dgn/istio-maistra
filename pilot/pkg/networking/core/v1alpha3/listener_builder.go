@@ -31,6 +31,7 @@ import (
 	"istio.io/istio/pilot/pkg/model"
 	istionetworking "istio.io/istio/pilot/pkg/networking"
 	"istio.io/istio/pilot/pkg/networking/core/v1alpha3/envoyfilter"
+	"istio.io/istio/pilot/pkg/networking/core/v1alpha3/extension"
 	istio_route "istio.io/istio/pilot/pkg/networking/core/v1alpha3/route"
 	"istio.io/istio/pilot/pkg/networking/plugin"
 	"istio.io/istio/pilot/pkg/networking/util"
@@ -446,6 +447,20 @@ func (lb *ListenerBuilder) patchListeners() {
 		lb.push, lb.envoyFilterWrapper, lb.inboundListeners, false)
 	lb.outboundListeners = envoyfilter.ApplyListenerPatches(networking.EnvoyFilter_SIDECAR_OUTBOUND, lb.node,
 		lb.push, lb.envoyFilterWrapper, lb.outboundListeners, false)
+}
+
+func (lb *ListenerBuilder) addExtensions() {
+	wasmPlugins := lb.push.WasmPlugins(lb.node)
+
+	if lb.node.Type == model.Router {
+		lb.gatewayListeners = extension.AddWasmPluginsToListeners(lb.gatewayListeners, wasmPlugins, lb.node, lb.push)
+		return
+	}
+
+	lb.inboundListeners = extension.AddWasmPluginsToListeners(lb.inboundListeners, wasmPlugins, lb.node, lb.push)
+	lb.outboundListeners = extension.AddWasmPluginsToListeners(lb.outboundListeners, wasmPlugins, lb.node, lb.push)
+	lb.virtualInboundListener = extension.AddWasmPluginsToListener(lb.virtualInboundListener, wasmPlugins, lb.node, lb.push)
+	lb.virtualOutboundListener = extension.AddWasmPluginsToListener(lb.virtualOutboundListener, wasmPlugins, lb.node, lb.push)
 }
 
 func (lb *ListenerBuilder) getListeners() []*listener.Listener {

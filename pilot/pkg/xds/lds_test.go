@@ -174,6 +174,7 @@ func TestLDSWithIngressGateway(t *testing.T) {
 
 	if l != nil {
 		if len(l.FilterChains) != 3 {
+			t.Logf("%v", l.FilterChains)
 			t.Fatalf("Expected 3 filter chains, got %d\n", len(l.FilterChains))
 		}
 	}
