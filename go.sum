@@ -242,8 +242,8 @@ github.com/decred/dcrd/dcrec/secp256k1/v3 v3.0.0/go.mod h1:J70FGZSbzsjecRTiTzER+
 github.com/deislabs/oras v0.11.1/go.mod h1:39lCtf8Q6WDC7ul9cnyWXONNzKvabEKk+AX+L0ImnQk=
 github.com/denisenkom/go-mssqldb v0.0.0-20191001013358-cfbb681360f0/go.mod h1:xbL0rPBG9cCiLr28tMa8zpbdarY27NDyej4t/EjAShU=
 github.com/denverdino/aliyungo v0.0.0-20190125010748-a747050bb1ba/go.mod h1:dV8lFg6daOBZbT6/BDGIz6Y3WFGn8juu6G+CQ6LHtl0=
-github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc h1:DSZH4/Pox/cq68QXGCSeZSrnGJA/24CxcO0UU3/Gn7E=
-github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
+github.com/dgn/api v0.0.0-20210610095343-d6d722c63e5a h1:d67rpjBUjeUo96aptcYz7IsulLW6xFRGLEf5697nmNw=
+github.com/dgn/api v0.0.0-20210610095343-d6d722c63e5a/go.mod h1:nsSFw1LIMmGL7r/+6fJI6FxeG/UGlLxRK8bkojIvBVs=
 github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca h1:Zc/lYa3Wf+W7xVxFiGAkggYhJUCFYxbF2ZL2rXw4xLM=
 github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca/go.mod h1:KsMGl4xZwFcYyJv61JALi14yn6xbHQT4CXh06jaEKh8=
 github.com/dgrijalva/jwt-go v0.0.0-20170104182250-a601269ab70c/go.mod h1:E3ru+11k8xSBh+hMPgOLZmtrrCbhqsmaPHjLKYnJCaQ=

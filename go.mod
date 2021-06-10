@@ -109,8 +109,9 @@ require (
 	sigs.k8s.io/yaml v1.2.0
 )
 
-// FIXME: this is just here until https://github.com/istio/api/pull/1940 gets merged
 replace (
-	istio.io/api => github.com/dgn/api v0.0.0-20210526093138-de63ecfd43cc
+	// FIXME: this is just here until https://github.com/istio/api/pull/1940 gets merged
+	istio.io/api => github.com/dgn/api v0.0.0-20210610095343-d6d722c63e5a
+	// FIXME: this is just here until https://github.com/istio/client-go/pull/512 gets merged
 	istio.io/client-go => github.com/dgn/client-go v0.0.0-20210602130630-b8c6e01813ca
 )
