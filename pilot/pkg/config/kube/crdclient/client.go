@@ -54,6 +54,7 @@ import (
 	istioclient "istio.io/client-go/pkg/clientset/versioned"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/collection"
 	"istio.io/istio/pkg/config/schema/collections"
@@ -89,10 +90,13 @@ type Client struct {
 	handlers map[config.GroupVersionKind][]model.EventHandler
 
 	// The istio/client-go client we will use to access objects
-	istioClient istioclient.Interface
+	istioClient          istioclient.Interface
+	istioDiscoveryFilter filter.DiscoveryNamespacesFilter
 
 	// The gateway-api client we will use to access objects
 	gatewayAPIClient gatewayapiclient.Interface
+
+	gatewayAPIDiscoveryFilter filter.DiscoveryNamespacesFilter
 
 	// beginSync is set to true when calling SyncAll, it indicates the controller has began sync resources.
 	beginSync *atomic.Bool
@@ -105,12 +109,12 @@ type Client struct {
 
 var _ model.ConfigStoreController = &Client{}
 
-func New(client kube.Client, revision, domainSuffix string, enableCRDScan bool) (*Client, error) {
+func New(client kube.Client, revision, domainSuffix string, enableCRDScan bool, istioDiscoveryFilter, gatewayAPIDiscoveryFilter filter.DiscoveryNamespacesFilter) (*Client, error) {
 	schemas := collections.Pilot
 	if features.EnableGatewayAPI {
 		schemas = collections.PilotGatewayAPI
 	}
-	return NewForSchemas(client, revision, domainSuffix, schemas, enableCRDScan)
+	return NewForSchemas(client, revision, domainSuffix, schemas, enableCRDScan, istioDiscoveryFilter, gatewayAPIDiscoveryFilter)
 }
 
 var crdWatches = map[config.GroupVersionKind]*waiter{
@@ -147,7 +151,7 @@ func WaitForCRD(k config.GroupVersionKind, stop <-chan struct{}) bool {
 	}
 }
 
-func NewForSchemas(client kube.Client, revision, domainSuffix string, schemas collection.Schemas, enableCRDScan bool) (*Client, error) {
+func NewForSchemas(client kube.Client, revision, domainSuffix string, schemas collection.Schemas, enableCRDScan bool, istioDiscoveryFilter, gatewayAPIDiscoveryFilter filter.DiscoveryNamespacesFilter) (*Client, error) {
 	schemasByCRDName := map[string]collection.Schema{}
 	for _, s := range schemas.All() {
 		// From the spec: "Its name MUST be in the format <.spec.name>.<.spec.group>."
@@ -155,18 +159,20 @@ func NewForSchemas(client kube.Client, revision, domainSuffix string, schemas co
 		schemasByCRDName[name] = s
 	}
 	out := &Client{
-		domainSuffix:     domainSuffix,
-		schemas:          schemas,
-		schemasByCRDName: schemasByCRDName,
-		revision:         revision,
-		queue:            queue.NewQueue(1 * time.Second),
-		kinds:            map[config.GroupVersionKind]*cacheHandler{},
-		handlers:         map[config.GroupVersionKind][]model.EventHandler{},
-		client:           client,
-		istioClient:      client.Istio(),
-		gatewayAPIClient: client.GatewayAPI(),
-		beginSync:        atomic.NewBool(false),
-		initialSync:      atomic.NewBool(false),
+		domainSuffix:              domainSuffix,
+		schemas:                   schemas,
+		schemasByCRDName:          schemasByCRDName,
+		revision:                  revision,
+		queue:                     queue.NewQueue(1 * time.Second),
+		kinds:                     map[config.GroupVersionKind]*cacheHandler{},
+		handlers:                  map[config.GroupVersionKind][]model.EventHandler{},
+		client:                    client,
+		istioClient:               client.Istio(),
+		istioDiscoveryFilter:      istioDiscoveryFilter,
+		gatewayAPIClient:          client.GatewayAPI(),
+		gatewayAPIDiscoveryFilter: gatewayAPIDiscoveryFilter,
+		beginSync:                 atomic.NewBool(false),
+		initialSync:               atomic.NewBool(false),
 	}
 
 	var known map[string]sets.Set
@@ -602,7 +608,7 @@ func handleCRDAdd(cl *Client, name string, knownVersions sets.Set, stop <-chan s
 		scope.Errorf("failed to create informer for %v: %v", preferredGvk, err)
 		return
 	}
-	cl.kinds[preferredGvk] = createCacheHandler(cl, i, preferredGvk, clusterGvk, s.Resource().IsClusterScoped())
+	cl.kinds[preferredGvk] = createCacheHandler(cl, i, preferredGvk, clusterGvk, s)
 	if w, f := crdWatches[preferredGvk]; f {
 		scope.Infof("notifying watchers %v was created", preferredGvk)
 		w.once.Do(func() {

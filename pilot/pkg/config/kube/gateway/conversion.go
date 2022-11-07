@@ -38,8 +38,8 @@ import (
 )
 
 const (
-	DefaultClassName             = "istio"
-	ControllerName               = "istio.io/gateway-controller"
+	DefaultClassName             = "ocp"
+	ControllerName               = "openshift.io/gateway-controller"
 	gatewayAliasForAnnotationKey = "gateway.istio.io/alias-for"
 )
 

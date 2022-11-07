@@ -36,6 +36,7 @@ import (
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials"
 	"google.golang.org/grpc/reflection"
+	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	v1 "k8s.io/client-go/kubernetes/typed/core/v1"
 	"k8s.io/client-go/rest"
 	"k8s.io/client-go/tools/cache"
@@ -49,6 +50,7 @@ import (
 	"istio.io/istio/pilot/pkg/server"
 	"istio.io/istio/pilot/pkg/serviceregistry/aggregate"
 	kubecontroller "istio.io/istio/pilot/pkg/serviceregistry/kube/controller"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pilot/pkg/serviceregistry/serviceentry"
 	"istio.io/istio/pilot/pkg/status"
@@ -178,6 +180,9 @@ type Server struct {
 	statusManager  *status.Manager
 	// RWConfigStore is the configstore which allows updates, particularly for status.
 	RWConfigStore model.ConfigStoreController
+
+	istioDiscoveryFilter      filter.DiscoveryNamespacesFilter
+	gatewayAPIDiscoveryFilter filter.DiscoveryNamespacesFilter
 }
 
 // NewServer creates a new Server instance based on the provided arguments.
@@ -220,6 +225,9 @@ func NewServer(args *PilotArgs, initFuncs ...func(*Server)) (*Server, error) {
 	if err := s.initKubeClient(args); err != nil {
 		return nil, fmt.Errorf("error initializing kube client: %v", err)
 	}
+	nsLister := s.kubeClient.KubeInformer().Core().V1().Namespaces().Lister()
+	s.istioDiscoveryFilter = filter.NewDiscoveryNamespacesFilter(nsLister, []*metav1.LabelSelector{})
+	s.gatewayAPIDiscoveryFilter = filter.NewDiscoveryNamespacesFilter(nsLister, []*metav1.LabelSelector{})
 
 	// used for both initKubeRegistry and initClusterRegistries
 	args.RegistryOptions.KubeOptions.EndpointMode = kubecontroller.DetectEndpointMode(s.kubeClient)
@@ -416,6 +424,26 @@ func (s *Server) Start(stop <-chan struct{}) error {
 	}
 	// Inform Discovery Server so that it can start accepting connections.
 	s.XDSServer.CachesSynced()
+
+	s.istioDiscoveryFilter.SelectorsChanged([]*metav1.LabelSelector{
+		{
+			MatchLabels: map[string]string{
+				"maistra.io/include-istio-api": "true",
+			},
+		},
+	})
+	s.gatewayAPIDiscoveryFilter.SelectorsChanged([]*metav1.LabelSelector{
+		{
+			MatchExpressions: []metav1.LabelSelectorRequirement{
+				{
+					Key:      "maistra.io/exclude-gw-api",
+					Operator: metav1.LabelSelectorOpDoesNotExist,
+				},
+			},
+		},
+	})
+
+	s.XDSServer.Push(&model.PushRequest{Full: true})
 
 	// Race condition - if waitForCache is too fast and we run this as a startup function,
 	// the grpc server would be started before CA is registered. Listening should be last.

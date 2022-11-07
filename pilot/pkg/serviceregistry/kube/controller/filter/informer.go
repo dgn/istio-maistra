@@ -23,6 +23,7 @@ type FilteredSharedIndexInformer interface {
 	GetIndexer() cache.Indexer
 	HasSynced() bool
 	Run(stopCh <-chan struct{})
+	SetWatchErrorHandler(cache.WatchErrorHandler) error
 }
 
 type filteredSharedIndexInformer struct {
@@ -79,6 +80,10 @@ func (w *filteredSharedIndexInformer) Run(stopCh <-chan struct{}) {
 
 func (w *filteredSharedIndexInformer) GetIndexer() cache.Indexer {
 	return w.filteredIndexer
+}
+
+func (w *filteredSharedIndexInformer) SetWatchErrorHandler(handler cache.WatchErrorHandler) error {
+	return w.SharedIndexInformer.SetWatchErrorHandler(handler)
 }
 
 type filteredIndexer struct {

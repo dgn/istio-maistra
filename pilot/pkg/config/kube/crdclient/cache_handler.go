@@ -26,7 +26,10 @@ import (
 	"k8s.io/client-go/tools/cache"
 
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config"
+	"istio.io/istio/pkg/config/schema/collection"
+	"istio.io/istio/pkg/config/schema/gvk"
 	"istio.io/pkg/log"
 )
 
@@ -34,7 +37,7 @@ import (
 // and will be invoked on each informer event.
 type cacheHandler struct {
 	client   *Client
-	informer cache.SharedIndexInformer
+	informer filter.FilteredSharedIndexInformer
 	// preferredGvk is the GVK we use internally. This is typically the same as clusterGvk, unless
 	// we support multiple versions and the cluster we are connected to does not support or preferred version.
 	// All calls to the client will come in as preferredGvk types.
@@ -74,22 +77,27 @@ func (h *cacheHandler) onEvent(old interface{}, curr interface{}, event model.Ev
 	return nil
 }
 
-func createCacheHandler(cl *Client, i informers.GenericInformer, preferredGvk, clusterGvk config.GroupVersionKind, clusterScoped bool) *cacheHandler {
+func createCacheHandler(cl *Client, i informers.GenericInformer, preferredGvk, clusterGvk config.GroupVersionKind, schema collection.Schema) *cacheHandler {
 	scope.Debugf("registered CRD %v", preferredGvk)
 	h := &cacheHandler{
 		client:       cl,
 		clusterGvk:   clusterGvk,
 		preferredGvk: preferredGvk,
-		informer:     i.Informer(),
 	}
 	if preferredGvk != clusterGvk {
 		scope.Infof("preferred version %v is not available, reading %v", preferredGvk, clusterGvk)
 	}
+	if preferredGvk.Group == gvk.KubernetesGateway.Group {
+		h.informer = filter.NewFilteredSharedIndexInformer(cl.gatewayAPIDiscoveryFilter.Filter, i.Informer())
+	} else {
+		h.informer = filter.NewFilteredSharedIndexInformer(cl.istioDiscoveryFilter.Filter, i.Informer())
+	}
 	h.lister = func(namespace string) cache.GenericNamespaceLister {
-		if clusterScoped {
-			return i.Lister()
+		gr := schema.Resource().GroupVersionResource().GroupResource()
+		if schema.Resource().IsClusterScoped() || namespace == "" {
+			return cache.NewGenericLister(h.informer.GetIndexer(), gr)
 		}
-		return i.Lister().ByNamespace(namespace)
+		return cache.NewGenericLister(h.informer.GetIndexer(), gr).ByNamespace(namespace)
 	}
 	kind := preferredGvk.Kind
 	i.Informer().AddEventHandler(cache.ResourceEventHandlerFuncs{

@@ -31,6 +31,7 @@ import (
 	networking "istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/collections"
 	"istio.io/istio/pkg/kube"
@@ -40,6 +41,10 @@ import (
 )
 
 const prefixedLabel = maistraPrefix + "fake"
+
+func noFilter(cl kube.ExtendedClient) filter.DiscoveryNamespacesFilter {
+	return filter.NewDiscoveryNamespacesFilter(cl.KubeInformer().Core().V1().Namespaces().Lister(), []*v1.LabelSelector{})
+}
 
 func initClients(t *testing.T,
 	stop <-chan struct{},
@@ -52,7 +57,7 @@ func initClients(t *testing.T,
 	k8sClient := kube.NewFakeClient()
 	iorKubeClient := NewFakeKubeClient(k8sClient)
 	routerClient := NewFakeRouterClient()
-	store, err := crdclient.New(k8sClient, "", "", false)
+	store, err := crdclient.New(k8sClient, "", "", false, noFilter(k8sClient), noFilter(k8sClient))
 	if err != nil {
 		t.Fatal(err)
 	}

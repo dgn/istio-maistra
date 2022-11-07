@@ -21,11 +21,14 @@ import (
 	"strings"
 	"time"
 
+	v1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+
 	v1alpha12 "istio.io/api/analysis/v1alpha1"
 	"istio.io/api/meta/v1alpha1"
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
 	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pilot/pkg/status"
 	"istio.io/istio/pkg/config/analysis/analyzers"
 	"istio.io/istio/pkg/config/analysis/diag"
@@ -64,7 +67,7 @@ func NewController(stop <-chan struct{}, rwConfigStore model.ConfigStoreControll
 	}
 
 	store, err := crdclient.NewForSchemas(kubeClient, revision,
-		domainSuffix, schemas, enableCRDScan)
+		domainSuffix, schemas, enableCRDScan, filter.NewDiscoveryNamespacesFilter(kubeClient.KubeInformer().Core().V1().Namespaces().Lister(), []*v1.LabelSelector{}), filter.NewDiscoveryNamespacesFilter(kubeClient.KubeInformer().Core().V1().Namespaces().Lister(), []*v1.LabelSelector{}))
 	if err != nil {
 		return nil, fmt.Errorf("unable to load common types for analysis, releasing lease: %v", err)
 	}

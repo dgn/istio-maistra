@@ -32,6 +32,7 @@ import (
 	"istio.io/api/meta/v1alpha1"
 	"istio.io/api/networking/v1alpha3"
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/collection"
 	"istio.io/istio/pkg/config/schema/collections"
@@ -42,13 +43,17 @@ import (
 	"istio.io/istio/pkg/util/sets"
 )
 
+func noFilter(cl kube.ExtendedClient) filter.DiscoveryNamespacesFilter {
+	return filter.NewDiscoveryNamespacesFilter(cl.KubeInformer().Core().V1().Namespaces().Lister(), []*metav1.LabelSelector{})
+}
+
 func makeClient(t *testing.T, schemas collection.Schemas) (model.ConfigStoreController, kube.ExtendedClient) {
 	fake := kube.NewFakeClient()
 	for _, s := range schemas.All() {
 		createCRD(t, fake, s.Resource(), nil)
 	}
 	stop := make(chan struct{})
-	config, err := New(fake, "", "", true)
+	config, err := New(fake, "", "", true, noFilter(fake), noFilter(fake))
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,7 +75,7 @@ func makeClientVersions(t *testing.T, schemas collection.Schemas, versions sets.
 	t.Cleanup(func() {
 		close(stop)
 	})
-	config, err := New(fake, "", "", true)
+	config, err := New(fake, "", "", true, noFilter(fake), noFilter(fake))
 	if err != nil {
 		t.Fatal(err)
 	}

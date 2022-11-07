@@ -70,6 +70,7 @@ type DeploymentController struct {
 	patcher            patcher
 	gatewayLister      lister.GatewayLister
 	gatewayClassLister lister.GatewayClassLister
+	revision           string
 }
 
 type DeploymentControllerInterface interface {
@@ -81,15 +82,15 @@ type patcher func(gvr schema.GroupVersionResource, name string, namespace string
 
 // NewDeploymentController constructs a DeploymentController and registers required informers.
 // The controller will not start until Run() is called.
-func NewDeploymentController(client kube.Client, version string) DeploymentControllerInterface {
+func NewDeploymentController(client kube.Client, version string, revision string) DeploymentControllerInterface {
 	log.Infof("gateway deployment controller reading version %v", version)
 	if version == "v1alpha2" {
 		return NewDeploymentControllerV1Alpha2(client)
 	}
-	return NewDeploymentControllerV1beta1(client)
+	return NewDeploymentControllerV1beta1(client, revision)
 }
 
-func NewDeploymentControllerV1beta1(client kube.Client) *DeploymentController {
+func NewDeploymentControllerV1beta1(client kube.Client, revision string) *DeploymentController {
 	gw := client.GatewayAPIInformer().Gateway().V1beta1().Gateways()
 	var gwcInformer maistrav1beta1.GatewayClassInformer
 	var gwcLister lister.GatewayClassLister
@@ -111,6 +112,7 @@ func NewDeploymentControllerV1beta1(client kube.Client) *DeploymentController {
 		},
 		gatewayLister:      gw.Lister(),
 		gatewayClassLister: gwcLister,
+		revision:           revision,
 	}
 	dc.queue = controllers.NewQueue("gateway deployment",
 		controllers.WithReconciler(dc.Reconcile),
@@ -181,6 +183,14 @@ func (d *DeploymentController) Reconcile(req types.NamespacedName) error {
 		if gw.Spec.GatewayClassName != DefaultClassName {
 			return nil
 		}
+	}
+
+	// configure revision label if revision is set
+	if d.revision != "" {
+		if gw.Labels == nil {
+			gw.Labels = make(map[string]string, 1)
+		}
+		gw.Labels["istio.io/rev"] = d.revision
 	}
 
 	// Matched class, reconcile it

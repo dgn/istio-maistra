@@ -35,6 +35,7 @@ import (
 	"istio.io/istio/pilot/pkg/config/kube/crdclient"
 	"istio.io/istio/pilot/pkg/config/memory"
 	"istio.io/istio/pilot/pkg/model"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/analysis"
 	"istio.io/istio/pkg/config/analysis/diag"
@@ -268,7 +269,14 @@ func (sa *IstiodAnalyzer) AddRunningKubeSource(c kubelib.Client) {
 func (sa *IstiodAnalyzer) AddRunningKubeSourceWithRevision(c kubelib.Client, revision string) {
 	// TODO: are either of these string constants intended to vary?
 	// This gets us only istio/ ones
-	store, err := crdclient.NewForSchemas(c, revision, "cluster.local", sa.kubeResources, true)
+	store, err := crdclient.NewForSchemas(
+		c,
+		revision,
+		"cluster.local",
+		sa.kubeResources,
+		true,
+		filter.NewDiscoveryNamespacesFilter(c.KubeInformer().Core().V1().Namespaces().Lister(), []*metav1.LabelSelector{}),
+		filter.NewDiscoveryNamespacesFilter(c.KubeInformer().Core().V1().Namespaces().Lister(), []*metav1.LabelSelector{}))
 	// RunAndWait must be called after NewForSchema so that the informers are all created and started.
 	if err != nil {
 		scope.Analysis.Errorf("error adding kube crdclient: %v", err)

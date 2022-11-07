@@ -76,7 +76,7 @@ func (s *Server) initKubeRegistry(args *PilotArgs) (err error) {
 	args.RegistryOptions.KubeOptions.SystemNamespace = args.Namespace
 	args.RegistryOptions.KubeOptions.MeshServiceController = s.ServiceController()
 
-	s.multiclusterController.AddHandler(kubecontroller.NewMulticluster(args.PodName,
+	h := kubecontroller.NewMulticluster(args.PodName,
 		s.kubeClient,
 		args.RegistryOptions.ClusterRegistriesNamespace,
 		args.RegistryOptions.KubeOptions,
@@ -85,7 +85,10 @@ func (s *Server) initKubeRegistry(args *PilotArgs) (err error) {
 		args.Revision,
 		s.shouldStartNsController(),
 		s.environment.ClusterLocal(),
-		s.server))
+		s.server)
+	h.IstioDiscoveryFilter = s.istioDiscoveryFilter
+
+	s.multiclusterController.AddHandler(h)
 
 	return
 }

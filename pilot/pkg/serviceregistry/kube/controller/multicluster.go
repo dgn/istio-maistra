@@ -28,6 +28,7 @@ import (
 	"istio.io/istio/pilot/pkg/leaderelection"
 	"istio.io/istio/pilot/pkg/model"
 	"istio.io/istio/pilot/pkg/server"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pilot/pkg/serviceregistry/provider"
 	"istio.io/istio/pilot/pkg/serviceregistry/serviceentry"
 	"istio.io/istio/pkg/cluster"
@@ -77,6 +78,8 @@ type Multicluster struct {
 
 	// secretNamespace where we get cluster-access secrets
 	secretNamespace string
+
+	IstioDiscoveryFilter filter.DiscoveryNamespacesFilter
 }
 
 // NewMulticluster initializes data structure to store multicluster information
@@ -183,7 +186,7 @@ func (m *Multicluster) ClusterAdded(cluster *multicluster.Cluster, clusterStopCh
 			m.serviceEntryController.AppendWorkloadHandler(kubeRegistry.WorkloadInstanceHandler)
 		} else if features.WorkloadEntryCrossCluster {
 			// TODO only do this for non-remotes, can't guarantee CRDs in remotes (depends on https://github.com/istio/istio/pull/29824)
-			if configStore, err := createWleConfigStore(client, m.revision, options); err == nil {
+			if configStore, err := createWleConfigStore(client, m.revision, options, m.IstioDiscoveryFilter); err == nil {
 				m.remoteKubeControllers[cluster.ID].workloadEntryController = serviceentry.NewWorkloadEntryController(
 					configStore, model.MakeIstioStore(configStore), options.XDSUpdater,
 					serviceentry.WithClusterID(cluster.ID),
@@ -212,7 +215,7 @@ func (m *Multicluster) ClusterAdded(cluster *multicluster.Cluster, clusterStopCh
 				NewLeaderElectionMulticluster(options.SystemNamespace, m.serverID, leaderelection.NamespaceController, m.revision, !localCluster, client).
 				AddRunFunction(func(leaderStop <-chan struct{}) {
 					log.Infof("starting namespace controller for cluster %s", cluster.ID)
-					nc := NewNamespaceController(client, m.caBundleWatcher)
+					nc := NewNamespaceController(client, m.caBundleWatcher, m.IstioDiscoveryFilter)
 					// Start informers again. This fixes the case where informers for namespace do not start,
 					// as we create them only after acquiring the leader lock
 					// Note: stop here should be the overall pilot stop, NOT the leader election stop. We are
@@ -312,10 +315,10 @@ func (m *Multicluster) ClusterDeleted(clusterID cluster.ID) error {
 	return nil
 }
 
-func createWleConfigStore(client kubelib.Client, revision string, opts Options) (model.ConfigStoreController, error) {
+func createWleConfigStore(client kubelib.Client, revision string, opts Options, istioDiscoveryFilter filter.DiscoveryNamespacesFilter) (model.ConfigStoreController, error) {
 	log.Infof("Creating WorkloadEntry only config store for %s", opts.ClusterID)
 	workloadEntriesSchemas := collection.NewSchemasBuilder().
 		MustAdd(collections.IstioNetworkingV1Alpha3Workloadentries).
 		Build()
-	return crdclient.NewForSchemas(client, revision, opts.DomainSuffix, workloadEntriesSchemas, opts.EnableCRDScan)
+	return crdclient.NewForSchemas(client, revision, opts.DomainSuffix, workloadEntriesSchemas, opts.EnableCRDScan, istioDiscoveryFilter, istioDiscoveryFilter)
 }

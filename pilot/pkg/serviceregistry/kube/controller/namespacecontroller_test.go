@@ -27,6 +27,7 @@ import (
 	listerv1 "k8s.io/client-go/listers/core/v1"
 
 	"istio.io/istio/pilot/pkg/keycertbundle"
+	"istio.io/istio/pilot/pkg/serviceregistry/kube/controller/filter"
 	"istio.io/istio/pkg/config/constants"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/inject"
@@ -38,7 +39,7 @@ func TestNamespaceController(t *testing.T) {
 	watcher := keycertbundle.NewWatcher()
 	caBundle := []byte("caBundle")
 	watcher.SetAndNotify(nil, nil, caBundle)
-	nc := NewNamespaceController(client, watcher)
+	nc := NewNamespaceController(client, watcher, filter.NewDiscoveryNamespacesFilter(client.KubeInformer().Core().V1().Namespaces().Lister(), []*metav1.LabelSelector{}))
 	nc.configmapLister = client.KubeInformer().Core().V1().ConfigMaps().Lister()
 	stop := make(chan struct{})
 	t.Cleanup(func() {
