@@ -428,7 +428,7 @@ func (s *Server) Start(stop <-chan struct{}) error {
 	s.istioDiscoveryFilter.SelectorsChanged([]*metav1.LabelSelector{
 		{
 			MatchLabels: map[string]string{
-				"maistra.io/include-istio-api": "true",
+				"maistra.io/member-of": "openshift-gateway-controller",
 			},
 		},
 	})

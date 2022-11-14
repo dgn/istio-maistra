@@ -645,6 +645,9 @@ var (
 		"Whether to enable IOR component, which provides integration between Istio Gateways and OpenShift Routes").Get()
 
 	EnableFederation = env.RegisterBoolVar("PILOT_ENABLE_FEDERATION", false, "").Get()
+
+	CACertConfigMapName = env.RegisterStringVar("PILOT_CA_CERT_CONFIG_MAP_NAME", "istio-ca-root-cert",
+		"Name of the ConfigMap that stores the CA Root Certificate.")
 )
 
 // EnableEndpointSliceController returns the value of the feature flag and whether it was actually specified.
