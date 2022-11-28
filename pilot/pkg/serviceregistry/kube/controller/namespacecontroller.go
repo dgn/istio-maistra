@@ -35,7 +35,7 @@ import (
 
 var (
 	// CACertNamespaceConfigMap is the name of the ConfigMap in each namespace storing the root cert of non-Kube CA.
-	CACertNamespaceConfigMap = features.CACertConfigMapName.Get()
+	CACertNamespaceConfigMap = features.CACertConfigMapName
 
 	configMapLabel = map[string]string{"istio.io/config": "true"}
 )

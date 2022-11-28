@@ -21,23 +21,34 @@ import (
 	"fmt"
 	"strings"
 	"text/template"
+	"time"
 
 	maistrav1beta1 "github.com/maistra/xns-informer/pkg/generated/gatewayapi/apis/v1beta1"
+	appsv1 "k8s.io/api/apps/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/apis/meta/v1/unstructured"
 	klabels "k8s.io/apimachinery/pkg/labels"
 	"k8s.io/apimachinery/pkg/runtime/schema"
 	"k8s.io/apimachinery/pkg/types"
+	appsinformersv1 "k8s.io/client-go/informers/apps/v1"
+	"k8s.io/client-go/kubernetes"
+	"k8s.io/client-go/tools/cache"
 	gateway "sigs.k8s.io/gateway-api/apis/v1beta1"
 	lister "sigs.k8s.io/gateway-api/pkg/client/listers/apis/v1beta1"
 	"sigs.k8s.io/yaml"
 
+	"istio.io/istio/pilot/pkg/features"
 	"istio.io/istio/pkg/config"
 	"istio.io/istio/pkg/config/schema/gvk"
 	"istio.io/istio/pkg/kube"
 	"istio.io/istio/pkg/kube/controllers"
 	istiolog "istio.io/pkg/log"
+)
+
+var (
+	ManagedByControllerLabelKey   = "gateway.istio.io/managed"
+	ManagedByControllerLabelValue = "maistra.io-gateway-controller"
 )
 
 // DeploymentController implements a controller that materializes a Gateway into an in cluster gateway proxy
@@ -71,6 +82,7 @@ type DeploymentController struct {
 	gatewayLister      lister.GatewayLister
 	gatewayClassLister lister.GatewayClassLister
 	revision           string
+	defaultLabels      map[string]string
 }
 
 type DeploymentControllerInterface interface {
@@ -129,8 +141,14 @@ func NewDeploymentControllerV1beta1(client kube.Client, revision string) *Deploy
 		AddEventHandler(handler)
 
 	// For Deployments, this is the only controller watching. We can filter to just the deployments we care about
-	// TODO: filter deployments with label selector "gateway.istio.io/managed=istio.io-gateway-controller"
-	client.KubeInformer().Apps().V1().Deployments().Informer().AddEventHandler(handler)
+	client.KubeInformer().InformerFor(&appsv1.Deployment{}, func(k kubernetes.Interface, resync time.Duration) cache.SharedIndexInformer {
+		return appsinformersv1.NewFilteredDeploymentInformer(
+			k, metav1.NamespaceAll, resync, cache.Indexers{cache.NamespaceIndex: cache.MetaNamespaceIndexFunc},
+			func(options *metav1.ListOptions) {
+				options.LabelSelector = "gateway.istio.io/managed=istio.io-gateway-controller"
+			},
+		)
+	}).AddEventHandler(handler)
 
 	// Use the full informer; we are already watching all Gateways for the core Istiod logic
 	gw.Informer().AddEventHandler(controllers.ObjectHandler(dc.queue.AddObject))
@@ -144,6 +162,14 @@ func NewDeploymentControllerV1beta1(client kube.Client, revision string) *Deploy
 				}
 			}
 		}))
+	}
+
+	defaultLabels := make(map[string]string, 0)
+	err := json.Unmarshal([]byte(features.DefaultLabelsForInjectedGateways), &defaultLabels)
+	if err != nil {
+		log.Warnf("failed to parse default labels for Deployments: %v", err)
+	} else {
+		dc.defaultLabels = defaultLabels
 	}
 
 	return dc
@@ -213,6 +239,7 @@ func (d *DeploymentController) configureIstioGateway(log *istiolog.Scope, gw gat
 	log.Info("service updated")
 
 	dep := deploymentInput{Gateway: &gw, KubeVersion122: kube.IsAtLeastVersion(d.client, 22)}
+	d.setDefaultLabels(dep.Gateway)
 	if err := d.ApplyTemplate("deployment.yaml", dep); err != nil {
 		return fmt.Errorf("update deployment: %v", err)
 	}
@@ -241,6 +268,15 @@ func (d *DeploymentController) configureIstioGateway(log *istiolog.Scope, gw gat
 	}
 	log.Info("gateway updated")
 	return nil
+}
+
+func (d *DeploymentController) setDefaultLabels(gateway *gateway.Gateway) {
+	for key, value := range d.defaultLabels {
+		// don't override user values
+		if _, ok := gateway.Labels[key]; !ok {
+			gateway.Labels[key] = value
+		}
+	}
 }
 
 // ApplyTemplate renders a template with the given input and (server-side) applies the results to the cluster.
